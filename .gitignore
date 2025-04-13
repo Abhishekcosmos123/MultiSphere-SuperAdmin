@@ -1,0 +1,62 @@
+# Dependencies
+/node_modules/
+.yarn/
+.pnp/
+.pnp.js
+.pnp.cjs
+.pnp.mjs
+*.tgz
+*.yarn-integrity
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Testing
+/coverage/
+
+# Next.js build
+/.next/
+/out/
+
+# Production build artifacts
+/build/
+
+# Miscellaneous system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment files (to be opted-in if needed)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs and editors
+/.idea/
+/.vscode/
+
+# Typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel/
+
+# Temporary files
+*.swp
+*.swo
+
+# Next.js Image Optimization files
+/public/_next/
