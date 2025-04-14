@@ -9,6 +9,7 @@ const initialState: SuperAdminState = {
   success: false,
   successMessage: null,
   profile: null,
+  useProducer: null,
 };
 
 const superAdminSlice = createSlice({
@@ -79,6 +80,30 @@ const superAdminSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    updateUseProducer(state, action: PayloadAction<boolean>) {
+      state.loading = true;
+      state.error = null;
+    },
+    updateUseProducerSuccess(state, action: PayloadAction<{ success: boolean; message: string; data: { use_producer: boolean } }>) {
+      state.loading = false;
+      state.useProducer = action.payload.data.use_producer;
+    },
+    updateUseProducerFailure(state, action: PayloadAction<string>) {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    fetchSingleVendorRequest(state) {
+      state.loading = true;
+      state.error = null;
+    },
+    fetchSingleVendorSuccess(state, action: PayloadAction<boolean>) {
+      state.loading = false;
+      state.useProducer = action.payload;
+    },
+    fetchSingleVendorFailure(state, action: PayloadAction<string>) {
+      state.loading = false;
+      state.error = action.payload;
+    },
   },
 });
 
@@ -97,6 +122,12 @@ export const {
   updateAdminProfileRequest,
   updateAdminProfileSuccess,
   updateAdminProfileFailure,
+  updateUseProducer,
+  updateUseProducerSuccess,
+  updateUseProducerFailure,
+  fetchSingleVendorRequest,
+  fetchSingleVendorSuccess,
+  fetchSingleVendorFailure,
 } = superAdminSlice.actions;
 
 export default superAdminSlice.reducer;

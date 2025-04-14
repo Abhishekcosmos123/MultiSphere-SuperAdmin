@@ -15,6 +15,7 @@ export interface SuperAdminState {
     success: boolean;
     successMessage: string | null;
     profile: AdminProfileResponse | null;
+    useProducer: boolean | null;
   }
   
   export interface AdminProfilePayload {
@@ -69,3 +70,10 @@ export interface SuperAdminState {
     payload: AdminProfilePayload;
   };
   
+  export interface UpdateVendorResponse {
+    success: boolean;
+    message: string;
+    data: {
+      use_producer: boolean;
+    };
+  }

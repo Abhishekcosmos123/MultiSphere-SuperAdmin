@@ -14,9 +14,15 @@ import {
   updateAdminProfileSuccess,
   updateAdminProfileFailure,
   updateAdminProfileRequest,
+  updateUseProducer,
+  updateUseProducerFailure,
+  updateUseProducerSuccess,
+  fetchSingleVendorFailure,
+  fetchSingleVendorSuccess,
+  fetchSingleVendorRequest,
 } from '../slices/dashboardSlice';
 import { dashboardService } from '@/lib/api/services/dashboard/dashboardService';
-import { UpdateAdminProfileActionPayload } from '@/types/dashboard';
+import { UpdateAdminProfileActionPayload, UpdateVendorResponse } from '@/types/dashboard';
 
 function* handleFetchModules(): Generator<any, void, any> {
   try {
@@ -62,9 +68,29 @@ function* handleUpdateAdminProfile(
   }
 }
 
+function* updateUseProducerSaga(action: PayloadAction<boolean>): Generator {
+  try {
+    const response: UpdateVendorResponse = yield call(dashboardService.updateVendorUseProducer, action.payload);
+    yield put(updateUseProducerSuccess(response));
+  } catch (error: any) {
+    yield put(updateUseProducerFailure(error?.response?.data?.message || 'Something went wrong'));
+  }
+}
+
+function* handleFetchSingleVendor(): any {
+  try {
+    const response = yield call(dashboardService.fetchSingleVendorConfig);
+    yield put(fetchSingleVendorSuccess(response.data.use_producer));
+  } catch (error: any) {
+    yield put(fetchSingleVendorFailure(error?.message || 'Something went wrong'));
+  }
+}
+
 export function* dashboardSaga() {
   yield takeLatest(fetchModulesRequest.type, handleFetchModules);
   yield takeLatest(fetchCurrentModuleRequest.type, handleFetchCurrentModule);
   yield takeLatest(updateCurrentModuleRequest.type, handleUpdateCurrentModule);
   yield takeLatest(updateAdminProfileRequest.type, handleUpdateAdminProfile);
+  yield takeLatest(updateUseProducer.type, updateUseProducerSaga);
+  yield takeLatest(fetchSingleVendorRequest.type, handleFetchSingleVendor);
 }
