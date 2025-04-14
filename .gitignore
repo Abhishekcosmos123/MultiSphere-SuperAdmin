@@ -7,6 +7,7 @@
 .pnp.mjs
 *.tgz
 *.yarn-integrity
+package-lock.json
 
 # Yarn
 .yarn/*

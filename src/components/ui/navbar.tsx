@@ -1,8 +1,13 @@
 "use client"
 
 import {
-  Bell, Search, User, Menu, LogOut, Settings, User as UserIcon,
-} from "lucide-react"
+  Bell,
+  Search,
+  Menu,
+  LogOut,
+  Settings,
+  User as UserIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -14,13 +19,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-// import { useDispatch } from "react-redux"
 import { useRouter } from "next/router"
-// import { logoutRequest } from "@/store/slices/authSlice"
-// import { adminLogoutRequest } from "@/store/slices/admin/authAdminSlice"
+import { logoutRequest } from "@/store/slices/authSlice"
 import { showSuccessToast } from "@/lib/utils/toast"
-// import { useEffect, useState } from "react"
-// import { storage, StorageKeys } from "@/lib/utils/storage"
+import { StorageKeys, storage } from "@/lib/utils/storage"
+import { useEffect, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { RootState } from "@/store"
+import type { User } from "@/types/auth"
+
 
 interface NavbarProps {
   toggleSidebar: () => void
@@ -28,36 +35,28 @@ interface NavbarProps {
 
 export default function Navbar({ toggleSidebar }: NavbarProps) {
   const router = useRouter()
-  const isAdminRoute = router.pathname.includes('/admin');
-//   const reduxUser = useSelector((state: RootState) =>
-//     isAdminRoute ? state.adminAuth.user : state.auth.user
-//   )
-//   const dispatch = useDispatch()
+  const reduxUser = useSelector((state: RootState) =>state.auth.user);
+  const dispatch = useDispatch();
 
-//   const [localUser, setLocalUser] = useState(reduxUser)
+  const [localUser, setLocalUser] = useState(reduxUser)
 
-//   useEffect(() => {
-//     if (!reduxUser) {
-//       const storedUser = storage.getJson(StorageKeys.USER)
-//       if (storedUser) {
-//         setLocalUser(storedUser)
-//       }
-//     } else {
-//       setLocalUser(reduxUser)
-//     }
-//   }, [reduxUser])
+  useEffect(() => {
+    if (!reduxUser) {
+      const storedUser = storage.getJson(StorageKeys.USER) as User | null;
+      if (storedUser) {
+        setLocalUser(storedUser)
+      }
+    } else {
+      setLocalUser(reduxUser)
+    }
+  }, [reduxUser])
 
   const handleLogout = () => {
-    // const token = storage.get(StorageKeys.TOKEN);
-    if (isAdminRoute) {
-    //   dispatch(adminLogoutRequest({ refreshToken: token ? String(token) : undefined }));
-      router.push('/admin/login');
-    } else {
-    //   dispatch(logoutRequest({ refreshToken: token ? String(token) : undefined }));
-      router.push('/');
-    }
-    // storage.remove(StorageKeys.TOKEN);
-    // storage.remove(StorageKeys.USER);
+    const token = storage.get(StorageKeys.TOKEN);
+      dispatch(logoutRequest({ refreshToken: token ? String(token) : undefined }));
+    storage.remove(StorageKeys.TOKEN);
+    storage.remove(StorageKeys.USER);
+    router.push("/");
     showSuccessToast("Logged out Successfully");
   };
 
@@ -81,16 +80,8 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  {/* <AvatarImage
-                    src={
-                      localUser?.profileImage instanceof File
-                        ? URL.createObjectURL(localUser.profileImage)
-                        : localUser?.profileImage || "/placeholder.svg?height=32&width=32"
-                    }
-                    alt={localUser?.name || "User"}
-                  /> */}
                   <AvatarFallback>
-                    <User className="h-5 w-5" />
+                    <UserIcon className="h-5 w-5" />
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -99,10 +90,10 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
-                    {/* {localUser?.name} */}
+                    {localUser?.name}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    {/* {localUser?.email || localUser?.phone} */}
+                    {localUser?.email || localUser?.phone}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -111,7 +102,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
                 <UserIcon className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>

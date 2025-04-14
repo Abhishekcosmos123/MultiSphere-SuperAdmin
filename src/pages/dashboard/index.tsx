@@ -3,48 +3,87 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../layout";
 import { Card } from "@/components/ui/card";
-import { storage, StorageKeys } from '@/lib/utils/storage';
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchCurrentModuleRequest,
+  fetchModulesRequest,
+  updateCurrentModuleRequest,
+  resetUpdateCurrentModule,
+  clearloading,
+} from "@/store/slices/dashboardSlice";
+import { RootState } from "@/store";
+import { showSuccessToast } from "@/lib/utils/toast";
+import { Spinner } from "@/components/ui/spinner";
+import { withAuth } from "@/hooks/middleware";
 
-// Define the type for the CRM module
-interface CrmModule {
+interface Module {
   id: number;
   name: string;
 }
 
-export default function DashboardPage() {
-  const [crmModules] = useState<CrmModule[]>([
-    { id: 1, name: "E-learning" },
-    { id: 2, name: "Real Estate" },
-    { id: 3, name: "Restaurants" },
-    { id: 4, name: "CRM Management" },
-  ]);
+function DashboardPage() {
+  const dispatch = useDispatch();
+  const { modules: rawModules, currentModule, success, loading } = useSelector((state: RootState) => state.dashboard);
 
-  const [selectedModule, setSelectedModule] = useState<CrmModule>(crmModules[0]);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
 
   useEffect(() => {
-    const savedModule = storage.getJson<CrmModule>(StorageKeys.SELECTED_MODULE); // Add type here
-    if (savedModule) {
-      const matched = crmModules.find((mod) => mod.id === savedModule.id);
-      if (matched) setSelectedModule(matched);
+    dispatch(fetchModulesRequest());
+    dispatch(fetchCurrentModuleRequest());
+    dispatch(clearloading())
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (Array.isArray(rawModules)) {
+      const mappedModules: Module[] = rawModules.map((name: string, index: number) => ({
+        id: index + 1,
+        name,
+      }));
+      setModules(mappedModules);
     }
-  }, [crmModules]);
+  }, [rawModules]);
+
+  useEffect(() => {
+    if (currentModule && modules.length > 0) {
+      const matched = modules.find((mod) => mod.name === currentModule);
+      if (matched) {
+        setSelectedModule(matched);
+      }
+    }
+  }, [currentModule, modules]);
+
+  useEffect(() => {
+    if (success) {
+      showSuccessToast("Current module updated successfully.");
+      dispatch(resetUpdateCurrentModule());
+    }
+  }, [success, dispatch]);
 
   const handleModuleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const moduleId = parseInt(event.target.value);
-    const selected = crmModules.find((mod) => mod.id === moduleId);
+    const selected = modules.find((mod) => mod.id === moduleId);
     if (selected) {
       setSelectedModule(selected);
     }
   };
 
   const handleSave = () => {
-    storage.setJson(StorageKeys.SELECTED_MODULE, selectedModule);
-    console.log("Saved module:", selectedModule);
+    if (selectedModule && selectedModule.name !== currentModule) {
+      dispatch(updateCurrentModuleRequest(selectedModule.name));
+    }
   };
 
   const handleCancel = () => {
-    setSelectedModule(crmModules[0]);
+    if (currentModule) {
+      const matched = modules.find((mod) => mod.name === currentModule);
+      if (matched) {
+        setSelectedModule(matched);
+      }
+    }
   };
+
+  const isSaveDisabled = !selectedModule || selectedModule.name === currentModule;
 
   return (
     <DashboardLayout>
@@ -54,11 +93,12 @@ export default function DashboardPage() {
         <Card className="p-4 mt-4">
           <h6 className="text-sm font-semibold mb-2">Select Module</h6>
           <select
-            value={selectedModule.id}
+            value={selectedModule?.id ?? ""}
             onChange={handleModuleChange}
             className="border rounded-md p-2 w-full"
+            disabled={modules.length === 0}
           >
-            {crmModules.map((mod) => (
+            {modules.map((mod) => (
               <option key={mod.id} value={mod.id}>
                 {mod.name}
               </option>
@@ -68,13 +108,22 @@ export default function DashboardPage() {
           <div className="mt-4 flex space-x-4">
             <button
               onClick={handleSave}
-              className="bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600 transition"
+              className="bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600 transition flex items-center justify-center gap-2 min-w-[80px] cursor-pointer"
+              disabled={isSaveDisabled || loading}
             >
-              Save
+              {loading ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </button>
             <button
               onClick={handleCancel}
               className="bg-gray-300 text-black rounded-md p-2 hover:bg-gray-400 transition"
+              disabled={!currentModule}
             >
               Cancel
             </button>
@@ -84,3 +133,5 @@ export default function DashboardPage() {
     </DashboardLayout>
   );
 }
+
+export default withAuth(DashboardPage, "/");

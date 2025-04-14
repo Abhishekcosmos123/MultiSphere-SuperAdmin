@@ -1,47 +1,9 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { PayloadAction } from '@reduxjs/toolkit';
-import { loginSuccess, loginFailure } from '../slices/authSlice';
-import { LoginFormData } from '@/lib/validations/auth';
-
-// Define the expected response structure from API
-interface LoginResponse {
-  token: string;
-  user: {
-    id: string;  // Changed `id` to string to match Redux store type
-    email: string;
-    firstName: string;
-    lastName: string;
-  };
-}
-
-// Define User type to match the expected structure in the store
-interface User {
-  id: string;  // Make sure `id` is of type `string` here
-  email: string;
-  firstName: string;
-  lastName: string;
-}
-
-/**
- * Makes API call to login endpoint
- * @param data - Login form data (email and password)
- * @returns Promise with user data and token
- * @throws Error if login fails
- */
-async function loginApi(data: LoginFormData): Promise<LoginResponse> {
-  const response = await fetch('/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Login failed');
-  }
-
-  return response.json();
-}
+import { loginSuccess, loginFailure, loginRequest, verifyOtpSuccess, verifyOtpFailure, verifyOtpRequest, resendOtpRequest, resendOtpSuccess, resendOtpFailure, logoutSuccess, logoutFailure, logoutRequest } from '../slices/authSlice';
+import { authService } from '@/lib/api/services/auth/authService';
+import { StorageKeys, storage } from '@/lib/utils/storage';
+import { LoginCredentials, LoginResponse, LogoutToken, OtpResponse, ResendOtpResponse } from '@/types/auth';
 
 /**
  * Saga worker for handling login process
@@ -50,33 +12,66 @@ async function loginApi(data: LoginFormData): Promise<LoginResponse> {
  * - Handles failure by dispatching error
  * - Redirects to home page on success
  */
-export function* loginSaga(action: PayloadAction<LoginFormData>): Generator {
+export function* loginSaga(action: PayloadAction<LoginCredentials>): Generator {
   try {
-    const response: LoginResponse = yield call(loginApi, action.payload);
-    
-    // Ensure that the user object has the same shape expected in Redux
-    const user: User = {
-      id: response.user.id,  // Ensure `id` is string
-      email: response.user.email,
-      firstName: response.user.firstName || '',
-      lastName: response.user.lastName || '',
-    };
+    const response = (yield call(authService.login, action.payload)) as LoginResponse;
 
-    // Dispatch loginSuccess with user and token
-    yield put(loginSuccess({ user, token: response.token }));
-
-    // Store in localStorage
-    localStorage.setItem('token', response.token);
-    localStorage.setItem('user', JSON.stringify(user));
-
-    // Redirect to home
-    window.location.href = '/';
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      yield put(loginFailure(error.message));
+    if (response.success) {
+      yield put(loginSuccess({ message: response.message }));
     } else {
-      yield put(loginFailure('Unknown error occurred during login'));
+      yield put(loginFailure(response.message || 'Failed to send OTP'));
     }
+  } catch (error: any) {
+    yield put(loginFailure(error.message || 'Unknown login error'));
+  }
+}
+
+/**
+ * Saga worker for handling OTP verification process
+ */
+export function* verifyOtpSaga(action: PayloadAction<{ otp: string }>): Generator {
+  try {
+    const response = (yield call(authService.verifyOtp, action.payload)) as OtpResponse;
+
+    yield put(verifyOtpSuccess(response));
+    storage.set(StorageKeys.TOKEN, response.data.token.refresh.token);
+    storage.set(StorageKeys.USER, JSON.stringify(response.data.user));
+    // Optional redirect:
+    // window.location.href = '/dashboard';
+  } catch (error: any) {
+    yield put(verifyOtpFailure(error.message));
+  }
+}
+
+export function* resendOtpSaga(action: PayloadAction<{ email: string }>): Generator {
+  try {
+    const response = (yield call(authService.resendOtp, action.payload)) as ResendOtpResponse;
+
+    // Handle success
+    if (response.success) {
+      yield put(resendOtpSuccess(response));
+    } else {
+      yield put(resendOtpFailure(response.message || 'Failed to resend OTP'));
+    }
+  } catch (error: any) {
+    yield put(resendOtpFailure(error.message || 'Failed to resend OTP'));
+  }
+}
+
+/**
+ * Saga worker for handling logout process
+ */
+export function* logoutSaga(action: PayloadAction<LogoutToken>): Generator {
+  try {
+    const response = yield call(authService.logout, action.payload);
+    yield put(logoutSuccess());
+    // Clear storage
+    storage.remove(StorageKeys.TOKEN);
+    storage.remove(StorageKeys.USER);
+    // Redirect to login
+    window.location.href = '/';
+  } catch (error: any) {
+    yield put(logoutFailure(error.message));
   }
 }
 
@@ -86,5 +81,8 @@ export function* loginSaga(action: PayloadAction<LoginFormData>): Generator {
  * - Handles registration requests
  */
 export function* watchAuth() {
-  yield takeLatest('auth/loginRequest', loginSaga);
+  yield takeLatest(loginRequest.type, loginSaga);
+  yield takeLatest(verifyOtpRequest.type, verifyOtpSaga);
+  yield takeLatest(resendOtpRequest.type, resendOtpSaga);
+  yield takeLatest(logoutRequest.type, logoutSaga);
 }

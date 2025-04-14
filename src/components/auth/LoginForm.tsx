@@ -5,6 +5,9 @@ import { Button } from "@/ui/button";
 import { FaEnvelope, FaEye, FaEyeSlash, FaShieldAlt } from "react-icons/fa";
 import Link from "next/link";
 import { validateEmail, validatePassword, validationMessages } from "@/lib/validations";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { Spinner } from "../ui/spinner";
 
 interface LoginFormProps {
     onLogin: (email: string, password: string) => void;
@@ -15,6 +18,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({ email: "", password: "" });
+    const loading = useSelector((state: RootState) => state.auth.loading);
 
     const validateForm = () => {
         let isValid = true;
@@ -109,8 +113,13 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                                 Forgot password?
                             </Link>
                         </div>
-                        <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
-                            <FaEnvelope className="mr-2" /> Login with email
+                        <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 flex items-center justify-center">
+                            {loading ? (
+                                <Spinner size={20} className="mr-2" />
+                            ) : (
+                                <FaEnvelope className="mr-2" />
+                            )}
+                            {loading ? "Loading..." : "Login with email"}
                         </Button>
                     </form>
                 </CardContent>

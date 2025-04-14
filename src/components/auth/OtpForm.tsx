@@ -1,33 +1,52 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Input } from "@/components/ui/input";
 import { Button } from "@/ui/button";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { Spinner } from "../ui/spinner";
+import { resendOtpRequest } from "@/store/slices/authSlice";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 
 interface OtpFormProps {
   email: string;
   onVerify: (otp: string) => void;
-  onResend?: () => void;
 }
 
-export default function OtpForm({ email, onVerify, onResend }: OtpFormProps) {
+export default function OtpForm({ email, onVerify }: OtpFormProps) {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [error, setError] = useState("");
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const [timer, setTimer] = useState(60);
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+  const isLoading = useSelector((state: RootState) => state.auth.loading);
+  const { success, message, error: authError } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    if (timer === 0) return;
-    const interval = setInterval(() => {
-      setTimer((prev) => prev - 1);
-    }, 1000);
+    let interval: NodeJS.Timeout;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
     return () => clearInterval(interval);
   }, [timer]);
 
+  useEffect(() => {
+    if (success && message) {
+      showSuccessToast(message);
+    } else if (authError) {
+      showErrorToast(authError);
+    }
+  }, [success, message, authError]);
+  
+
   const handleChange = (value: string, index: number) => {
-    if (!/^[0-9]?$/.test(value)) return;
+    if (!/^\d?$/.test(value)) return;
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+
     if (value && index < 5) {
       inputsRef.current[index + 1]?.focus();
     }
@@ -54,12 +73,10 @@ export default function OtpForm({ email, onVerify, onResend }: OtpFormProps) {
   };
 
   const handleResend = () => {
-    if (onResend) {
-      onResend();
-      setOtp(Array(6).fill(""));
-      setTimer(60);
-      inputsRef.current[0]?.focus();
-    }
+    dispatch(resendOtpRequest({ email }));
+    setOtp(Array(6).fill(""));
+    setTimer(30);
+    inputsRef.current[0]?.focus();
   };
 
   return (
@@ -94,11 +111,23 @@ export default function OtpForm({ email, onVerify, onResend }: OtpFormProps) {
 
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
-            <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
-              Verify OTP
+            <Button
+              type="submit"
+              className="w-full bg-red-600 hover:bg-red-700 flex justify-center items-center gap-2"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Verifying...
+                </>
+              ) : (
+                "Verify OTP"
+              )}
             </Button>
 
             <div className="text-center text-sm">
+            <p className="text-gray-500 mb-1">Didn&rsquo;t receive the OTP?</p>
               {timer > 0 ? (
                 <span className="text-gray-500">Resend OTP in {timer}s</span>
               ) : (

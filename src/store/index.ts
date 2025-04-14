@@ -3,6 +3,8 @@ import createSagaMiddleware from 'redux-saga';
 import { all } from 'redux-saga/effects';
 import authReducer from './slices/authSlice';
 import { watchAuth } from './sagas/authSaga';
+import dashboardReducer from './slices/dashboardSlice'
+import { dashboardSaga } from './sagas/dashboardSaga';
 
 /**
  * Root saga that combines all individual sagas
@@ -10,7 +12,7 @@ import { watchAuth } from './sagas/authSaga';
  * - Authentication sagas (login, register)
  */
 function* rootSaga() {
-  yield all([watchAuth()]);
+  yield all([watchAuth(), dashboardSaga()]);
 }
 
 // Create saga middleware for handling side effects
@@ -25,6 +27,7 @@ const sagaMiddleware = createSagaMiddleware();
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    dashboard: dashboardReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({ thunk: false }).concat(sagaMiddleware),
