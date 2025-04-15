@@ -4,6 +4,7 @@ export interface FetchModulesResponse {
     message: string;
     data: {
       modules: string[];
+      useCoordinator: { [key: string]: boolean };
     };
   }
 
@@ -16,6 +17,8 @@ export interface SuperAdminState {
     successMessage: string | null;
     profile: AdminProfileResponse | null;
     useProducer: boolean | null;
+    useCoordinator: { [key: string]: boolean };
+    coordinator: Record<string, boolean>;
   }
   
   export interface AdminProfilePayload {
@@ -75,5 +78,13 @@ export interface SuperAdminState {
     message: string;
     data: {
       use_producer: boolean;
+    };
+  }
+
+  export interface UpdateCoordinatorResponse {
+    success: boolean;
+    message: string;
+    data: {
+      updatedCoordinator: Record<string, boolean>;
     };
   }

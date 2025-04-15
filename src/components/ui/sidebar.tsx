@@ -39,7 +39,7 @@ export default function Sidebar() {
         <h2 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Main</h2>
         <div className="space-y-1">
           <SidebarItem icon={LayoutDashboard} title="Dashboard" href="/dashboard" active={pathname === "/dashboard"} />
-          <SidebarItem icon={BarChart3} title="Analytics" href="/analytics" active={pathname === "/analytics"} />
+          <SidebarItem icon={BarChart3} title="Manage Intermediaries" href="/intermediaries" active={pathname === "/intermediaries"} />
         </div>
       </div>
       <div className="py-2">

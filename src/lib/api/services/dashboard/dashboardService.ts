@@ -1,4 +1,4 @@
-import { AdminProfilePayload, FetchModulesResponse, UpdateVendorResponse } from '@/types/dashboard';
+import { AdminProfilePayload, FetchModulesResponse, UpdateCoordinatorResponse, UpdateVendorResponse } from '@/types/dashboard';
 import { apiClient } from '../../client';
 
 export const dashboardService = {
@@ -25,4 +25,8 @@ export const dashboardService = {
   async fetchSingleVendorConfig(): Promise<FetchModulesResponse> {
     return apiClient.post('/super-admin/single-vendor');
   },
+
+  async updateCoordinator(coordinatorData: Record<string, boolean>): Promise<UpdateCoordinatorResponse> {
+    return apiClient.patch(`/super-admin/update-coordinator`, { use_coordinator: coordinatorData });
+  }
 }; 

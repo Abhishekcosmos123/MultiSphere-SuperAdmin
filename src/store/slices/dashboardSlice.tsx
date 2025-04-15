@@ -1,8 +1,8 @@
-import { AdminProfilePayload, AdminProfileResponse, SuperAdminState } from '@/types/dashboard';
+import { AdminProfilePayload, AdminProfileResponse, FetchModulesResponse, SuperAdminState } from '@/types/dashboard';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 const initialState: SuperAdminState = {
-  modules: [],
+  modules: [] as string[],
   loading: false,
   error: null,
   currentModule: null,
@@ -10,6 +10,8 @@ const initialState: SuperAdminState = {
   successMessage: null,
   profile: null,
   useProducer: null,
+  useCoordinator: {} as { [key: string]: boolean },
+  coordinator: {},
 };
 
 const superAdminSlice = createSlice({
@@ -20,9 +22,10 @@ const superAdminSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    fetchModulesSuccess: (state, action: PayloadAction<string[]>) => {
+    fetchModulesSuccess: (state, action: PayloadAction<FetchModulesResponse>) => {
       state.loading = false;
-      state.modules = action.payload;
+      state.modules = action.payload.data.modules;
+      state.useCoordinator = action.payload.data?.useCoordinator;
     },
     fetchModulesFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -104,6 +107,23 @@ const superAdminSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    updateCoordinatorAsync: (state, action: PayloadAction<Record<string, boolean>>) => {
+      state.successMessage = null;
+      state.loading = true;
+      state.error = null;
+    },
+    updateCoordinatorAsyncSuccess: (
+      state,
+      action: PayloadAction<{ success: boolean; message: string; data: Record<string, boolean> }>
+    ) => {
+      state.loading = false;
+      state.coordinator = action.payload.data;
+      state.successMessage = action.payload.message;
+    },
+    updateCoordinatorAsyncFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
   },
 });
 
@@ -128,6 +148,9 @@ export const {
   fetchSingleVendorRequest,
   fetchSingleVendorSuccess,
   fetchSingleVendorFailure,
+  updateCoordinatorAsync,
+  updateCoordinatorAsyncSuccess,
+  updateCoordinatorAsyncFailure,
 } = superAdminSlice.actions;
 
 export default superAdminSlice.reducer;

@@ -20,15 +20,17 @@ import {
   fetchSingleVendorFailure,
   fetchSingleVendorSuccess,
   fetchSingleVendorRequest,
+  updateCoordinatorAsync,
+  updateCoordinatorAsyncSuccess,
+  updateCoordinatorAsyncFailure,
 } from '../slices/dashboardSlice';
 import { dashboardService } from '@/lib/api/services/dashboard/dashboardService';
-import { UpdateAdminProfileActionPayload, UpdateVendorResponse } from '@/types/dashboard';
+import { UpdateAdminProfileActionPayload, UpdateCoordinatorResponse, UpdateVendorResponse } from '@/types/dashboard';
 
 function* handleFetchModules(): Generator<any, void, any> {
   try {
     const response = yield call(dashboardService.fetchModules);
-    const modules = response?.data?.modules || [];
-    yield put(fetchModulesSuccess(modules));
+    yield put(fetchModulesSuccess(response));
   } catch (error: any) {
     yield put(fetchModulesFailure(error.message || 'Something went wrong'));
   }
@@ -86,6 +88,26 @@ function* handleFetchSingleVendor(): any {
   }
 }
 
+function* updateCoordinatorSaga(action: PayloadAction<Record<string, boolean>>): Generator<any, void, UpdateCoordinatorResponse> {
+  try {
+    const response: UpdateCoordinatorResponse = yield call(dashboardService.updateCoordinator, action.payload);
+
+    if (response.success) {
+      const structuredResponse = {
+        success: response.success,
+        message: response.message,
+        data: response.data.updatedCoordinator
+      };
+      
+      yield put(updateCoordinatorAsyncSuccess(structuredResponse));
+    } else {
+      yield put(updateCoordinatorAsyncFailure(response.message || 'Failed to update coordinator'));
+    }
+  } catch (error: any) {
+    yield put(updateCoordinatorAsyncFailure(error?.message || 'Something went wrong'));
+  }
+}
+
 export function* dashboardSaga() {
   yield takeLatest(fetchModulesRequest.type, handleFetchModules);
   yield takeLatest(fetchCurrentModuleRequest.type, handleFetchCurrentModule);
@@ -93,4 +115,5 @@ export function* dashboardSaga() {
   yield takeLatest(updateAdminProfileRequest.type, handleUpdateAdminProfile);
   yield takeLatest(updateUseProducer.type, updateUseProducerSaga);
   yield takeLatest(fetchSingleVendorRequest.type, handleFetchSingleVendor);
+  yield takeLatest(updateCoordinatorAsync.type, updateCoordinatorSaga);
 }
