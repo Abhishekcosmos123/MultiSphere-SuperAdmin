@@ -18,15 +18,7 @@ export const dashboardService = {
     return apiClient.patch(`/super-admin/profile/${id}`, payload);
   },
 
-  async updateVendorUseProducer(useProducer: boolean): Promise<UpdateVendorResponse> {
-    return apiClient.put(`/super-admin/single-vendor`, { use_producer: useProducer });
-  },
-
-  async fetchSingleVendorConfig(): Promise<FetchModulesResponse> {
-    return apiClient.post('/super-admin/single-vendor');
-  },
-
-  async updateCoordinator(coordinatorData: Record<string, boolean>): Promise<UpdateCoordinatorResponse> {
-    return apiClient.patch(`/super-admin/update-coordinator`, { use_coordinator: coordinatorData });
+  async updateCoordinator(coordinatorData: Record<string, boolean>, producerData: Record<string, boolean>): Promise<UpdateCoordinatorResponse> {
+    return apiClient.patch(`/super-admin/update-role`, { use_coordinator: coordinatorData, use_producers: producerData});
   }
 }; 

@@ -2,7 +2,11 @@ import { useState, useMemo, useEffect } from "react";
 import DashboardLayout from "../layout";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { clearloading, fetchModulesRequest, updateCoordinatorAsync } from "@/store/slices/dashboardSlice";
+import {
+  clearloading,
+  fetchModulesRequest,
+  updateCoordinatorAsync,
+} from "@/store/slices/dashboardSlice";
 import { showSuccessToast } from "@/lib/utils/toast";
 import { Spinner } from "@/components/ui/spinner";
 import { withAuth } from "@/hooks/middleware";
@@ -11,6 +15,7 @@ function IntermediarySettingsPage() {
   const dispatch = useDispatch();
   const modules = useSelector((state: RootState) => state.dashboard.modules) || [];
   const useCoordinator = useSelector((state: RootState) => state.dashboard.useCoordinator);
+  const useProducer = useSelector((state: RootState) => state.dashboard.useProducerr);
   const coordinator = useSelector((state: RootState) => state.dashboard.coordinator);
   const loading = useSelector((state: RootState) => state.dashboard.loading);
   const message = useSelector((state: RootState) => state.dashboard.successMessage);
@@ -32,6 +37,9 @@ function IntermediarySettingsPage() {
 
   const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
   const [initialRoles, setInitialRoles] = useState<number[]>([]);
+
+  const [singleVendorRoles, setSingleVendorRoles] = useState<number[]>([]);
+  const [initialSingleVendorRoles, setInitialSingleVendorRoles] = useState<number[]>([]);
 
   useEffect(() => {
     dispatch(fetchModulesRequest());
@@ -56,32 +64,61 @@ function IntermediarySettingsPage() {
   };
 
   const handleSave = () => {
-    const formattedData = intermediaryRoles
+    const coordinatorData = intermediaryRoles
       .filter((role) => role.name !== "CRM Management" && role.name !== "E-learning")
-      .reduce<{ [key: string]: boolean }>((acc, role) => {
-        const key = role.name;
-        const isSelected = selectedRoles.includes(role.id);
-        acc[key] = isSelected;
+      .reduce<Record<string, boolean>>((acc, role) => {
+        acc[role.name] = selectedRoles.includes(role.id);
         return acc;
       }, {});
-    dispatch(updateCoordinatorAsync(formattedData));
+  
+    const producerData = intermediaryRoles.reduce<Record<string, boolean>>((acc, role) => {
+      acc[role.name] = singleVendorRoles.includes(role.id);
+      return acc;
+    }, {});
+  
+    dispatch(updateCoordinatorAsync({ coordinatorData, producerData }));
   };
+  
 
   const handleCancel = () => {
     setSelectedRoles(initialRoles);
+    setSingleVendorRoles(initialSingleVendorRoles);
+  };
+
+  useEffect(() => {
+    if (!useProducer) return;
+  
+    const vendorRoles = intermediaryRoles
+      .filter((role) => useProducer[role.name] === true)
+      .map((role) => role.id);
+  
+    setSingleVendorRoles(vendorRoles);
+    setInitialSingleVendorRoles(vendorRoles);
+  }, [intermediaryRoles, useProducer]);
+  
+
+  const toggleVendorCheckbox = (id: number) => {
+    setSingleVendorRoles((prev) =>
+      prev.includes(id) ? prev.filter((roleId) => roleId !== id) : [...prev, id]
+    );
   };
 
   return (
     <DashboardLayout>
       <div className="p-6 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-semibold mb-6">Manage Intermediary Roles</h1>
+        <h1 className="text-2xl font-semibold mb-6">Manage Access & Modes</h1>
 
         <div className="border rounded-lg shadow-sm overflow-hidden">
           <table className="min-w-full table-auto">
             <thead className="bg-gray-100">
               <tr>
                 <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Name</th>
-                <th className="text-center px-6 py-3 text-sm font-medium text-gray-700">Enabled</th>
+                <th className="text-center px-6 py-3 text-sm font-medium text-gray-700">
+                  Has Coordinator Access
+                </th>
+                <th className="text-center px-6 py-3 text-sm font-medium text-gray-700">
+                  Single Vendor Mode
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -97,6 +134,14 @@ function IntermediarySettingsPage() {
                         onChange={() => toggleCheckbox(role.id)}
                         className={`w-5 h-5 ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                         disabled={isDisabled}
+                      />
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <input
+                        type="checkbox"
+                        checked={singleVendorRoles.includes(role.id)}
+                        onChange={() => toggleVendorCheckbox(role.id)}
+                        className={`w-5 h-5`}
                       />
                     </td>
                   </tr>
@@ -115,9 +160,8 @@ function IntermediarySettingsPage() {
           </button>
           <button
             onClick={handleSave}
-            className={`flex items-center px-4 py-2 rounded-md text-white ${
-              !loading ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-300 cursor-not-allowed"
-            }`}
+            className={`flex items-center px-4 py-2 rounded-md text-white ${!loading ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-300 cursor-not-allowed"
+              }`}
           >
             {loading && <Spinner className="w-4 h-4 mr-2" />}
             {loading ? "Saving..." : "Save"}

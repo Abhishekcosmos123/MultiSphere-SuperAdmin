@@ -14,18 +14,12 @@ import {
   updateAdminProfileSuccess,
   updateAdminProfileFailure,
   updateAdminProfileRequest,
-  updateUseProducer,
-  updateUseProducerFailure,
-  updateUseProducerSuccess,
-  fetchSingleVendorFailure,
-  fetchSingleVendorSuccess,
-  fetchSingleVendorRequest,
   updateCoordinatorAsync,
   updateCoordinatorAsyncSuccess,
   updateCoordinatorAsyncFailure,
 } from '../slices/dashboardSlice';
 import { dashboardService } from '@/lib/api/services/dashboard/dashboardService';
-import { UpdateAdminProfileActionPayload, UpdateCoordinatorResponse, UpdateVendorResponse } from '@/types/dashboard';
+import { UpdateAdminProfileActionPayload, UpdateCoordinatorPayload, UpdateCoordinatorResponse, UpdateVendorResponse } from '@/types/dashboard';
 
 function* handleFetchModules(): Generator<any, void, any> {
   try {
@@ -70,41 +64,35 @@ function* handleUpdateAdminProfile(
   }
 }
 
-function* updateUseProducerSaga(action: PayloadAction<boolean>): Generator {
+function* updateCoordinatorSaga(
+  action: PayloadAction<UpdateCoordinatorPayload>
+): Generator<any, void, UpdateCoordinatorResponse> {
   try {
-    const response: UpdateVendorResponse = yield call(dashboardService.updateVendorUseProducer, action.payload);
-    yield put(updateUseProducerSuccess(response));
-  } catch (error: any) {
-    yield put(updateUseProducerFailure(error?.response?.data?.message || 'Something went wrong'));
-  }
-}
+    const { coordinatorData, producerData } = action.payload;
 
-function* handleFetchSingleVendor(): any {
-  try {
-    const response = yield call(dashboardService.fetchSingleVendorConfig);
-    yield put(fetchSingleVendorSuccess(response.data.use_producer));
-  } catch (error: any) {
-    yield put(fetchSingleVendorFailure(error?.message || 'Something went wrong'));
-  }
-}
-
-function* updateCoordinatorSaga(action: PayloadAction<Record<string, boolean>>): Generator<any, void, UpdateCoordinatorResponse> {
-  try {
-    const response: UpdateCoordinatorResponse = yield call(dashboardService.updateCoordinator, action.payload);
+    const response: UpdateCoordinatorResponse = yield call(
+      dashboardService.updateCoordinator,
+      coordinatorData,
+      producerData
+    );
 
     if (response.success) {
       const structuredResponse = {
         success: response.success,
         message: response.message,
-        data: response.data.updatedCoordinator
+        data: response.data.updatedCoordinator,
       };
-      
+
       yield put(updateCoordinatorAsyncSuccess(structuredResponse));
     } else {
-      yield put(updateCoordinatorAsyncFailure(response.message || 'Failed to update coordinator'));
+      yield put(
+        updateCoordinatorAsyncFailure(response.message || "Failed to update coordinator")
+      );
     }
   } catch (error: any) {
-    yield put(updateCoordinatorAsyncFailure(error?.message || 'Something went wrong'));
+    yield put(
+      updateCoordinatorAsyncFailure(error?.message || "Something went wrong")
+    );
   }
 }
 
@@ -113,7 +101,5 @@ export function* dashboardSaga() {
   yield takeLatest(fetchCurrentModuleRequest.type, handleFetchCurrentModule);
   yield takeLatest(updateCurrentModuleRequest.type, handleUpdateCurrentModule);
   yield takeLatest(updateAdminProfileRequest.type, handleUpdateAdminProfile);
-  yield takeLatest(updateUseProducer.type, updateUseProducerSaga);
-  yield takeLatest(fetchSingleVendorRequest.type, handleFetchSingleVendor);
   yield takeLatest(updateCoordinatorAsync.type, updateCoordinatorSaga);
 }
