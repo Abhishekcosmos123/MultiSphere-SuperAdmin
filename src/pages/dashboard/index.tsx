@@ -5,7 +5,6 @@ import { RootState } from "@/store";
 import {
   clearloading,
   fetchModulesRequest,
-  updateCoordinatorAsync,
 } from "@/store/slices/dashboardSlice";
 import { showSuccessToast } from "@/lib/utils/toast";
 import { Spinner } from "@/components/ui/spinner";
@@ -20,6 +19,7 @@ function IntermediarySettingsPage() {
     useProducerr: useProducer,
     loading,
     successMessage: message,
+    currentModule
   } = useSelector((state: RootState) => state.dashboard);
 
   const [selectedModule, setSelectedModule] = useState<string>("");
@@ -36,9 +36,9 @@ function IntermediarySettingsPage() {
 
   useEffect(() => {
     if (modules.length > 0) {
-      setSelectedModule(modules[0]);
+      setSelectedModule(currentModule || modules[0]);
     }
-  }, [modules]);
+  }, [modules, currentModule]);
 
   useEffect(() => {
     if (selectedModule) {
@@ -56,14 +56,15 @@ function IntermediarySettingsPage() {
   const handleSave = () => {
     if (!selectedModule) return;
 
-    const payload = {
-      coordinatorData: { [selectedModule]: coordinatorAccess },
-      producerData: { [selectedModule]: vendorAccess },
-      currentModule: selectedModule,
-      jsonFile: jsonFile ?? undefined,
-    };
-
-    dispatch(updateCoordinatorAsync(payload));
+    dispatch({
+      type: "dashboard/updateCoordinatorAsync",
+      payload: {
+        coordinatorData: { [selectedModule]: coordinatorAccess },
+        producerData: { [selectedModule]: vendorAccess },
+        currentModule: selectedModule,
+        jsonFile: jsonFile ?? undefined,
+      },
+    });
   };
 
   const handleCancel = () => {
@@ -85,7 +86,7 @@ function IntermediarySettingsPage() {
   return (
     <DashboardLayout>
       <div className="p-6 max-w-5xl mx-auto w-full">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">Intermediary Settings</h1>
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">Super Admin Dashboard</h1>
 
         <div className="bg-white border rounded-2xl shadow-md p-6 space-y-6">
           {/* Module Selector */}
@@ -164,7 +165,6 @@ function IntermediarySettingsPage() {
             {loading && <Spinner className="w-4 h-4 mr-2" />}
             {loading ? "Saving..." : "Save"}
           </button>
-
         </div>
       </div>
     </DashboardLayout>
