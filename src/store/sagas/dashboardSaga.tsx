@@ -64,35 +64,32 @@ function* handleUpdateAdminProfile(
   }
 }
 
+
 function* updateCoordinatorSaga(
   action: PayloadAction<UpdateCoordinatorPayload>
 ): Generator<any, void, UpdateCoordinatorResponse> {
   try {
-    const { coordinatorData, producerData } = action.payload;
+    const { coordinatorData, producerData, currentModule, jsonFile } = action.payload;
 
     const response: UpdateCoordinatorResponse = yield call(
       dashboardService.updateCoordinator,
       coordinatorData,
-      producerData
+      producerData,
+      currentModule,
+      jsonFile
     );
 
     if (response.success) {
-      const structuredResponse = {
+      yield put(updateCoordinatorAsyncSuccess({
         success: response.success,
         message: response.message,
-        data: response.data.updatedCoordinator,
-      };
-
-      yield put(updateCoordinatorAsyncSuccess(structuredResponse));
+        data: response.data
+      }));
     } else {
-      yield put(
-        updateCoordinatorAsyncFailure(response.message || "Failed to update coordinator")
-      );
+      yield put(updateCoordinatorAsyncFailure(response.message || "Failed to update coordinator"));
     }
   } catch (error: any) {
-    yield put(
-      updateCoordinatorAsyncFailure(error?.message || "Something went wrong")
-    );
+    yield put(updateCoordinatorAsyncFailure(error?.message || "Something went wrong"));
   }
 }
 

@@ -13,6 +13,9 @@ const initialState: SuperAdminState = {
   useCoordinator: {} as { [key: string]: boolean },
   coordinator: {},
   useProducerr: {} as { [key: string]: boolean },
+  contentUrl: '',
+  cloudinaryUrl: '',
+  producers: {},
 };
 
 const superAdminSlice = createSlice({
@@ -25,9 +28,11 @@ const superAdminSlice = createSlice({
     },
     fetchModulesSuccess: (state, action: PayloadAction<FetchModulesResponse>) => {
       state.loading = false;
-      state.modules = action.payload.data.modules;
-      state.useCoordinator = action.payload.data?.useCoordinator;
-      state.useProducerr = action.payload.data?.useProducers;
+      state.modules = action.payload.data.allModules;
+      state.currentModule = action.payload.data.currentModule;
+      state.contentUrl = action.payload.data.content;
+      state.useCoordinator = action.payload.data.useCoordinator;
+      state.useProducerr = action.payload.data.useProducers;
     },
     fetchModulesFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -85,17 +90,36 @@ const superAdminSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
-    updateCoordinatorAsync: (state, action: PayloadAction<UpdateCoordinatorPayload>) => {
+    updateCoordinatorAsync: (
+      state,
+      action: PayloadAction<{
+        coordinatorData: Record<string, boolean>;
+        producerData: Record<string, boolean>;
+        currentModule: string;
+      }>
+    ) => {
       state.successMessage = null;
       state.loading = true;
       state.error = null;
     },
     updateCoordinatorAsyncSuccess: (
       state,
-      action: PayloadAction<{ success: boolean; message: string; data: Record<string, boolean> }>
+      action: PayloadAction<{
+        success: boolean;
+        message: string;
+        data: {
+          updatedCoordinator: Record<string, boolean>;
+          updatedProducers: Record<string, boolean>;
+          current_module: string;
+          cloudinaryUrl: string;
+        };
+      }>
     ) => {
       state.loading = false;
-      state.coordinator = action.payload.data;
+      state.coordinator = action.payload.data.updatedCoordinator;
+      state.producers = action.payload.data.updatedProducers;
+      state.currentModule = action.payload.data.current_module;
+      state.cloudinaryUrl = action.payload.data.cloudinaryUrl;
       state.successMessage = action.payload.message;
     },
     updateCoordinatorAsyncFailure: (state, action: PayloadAction<string>) => {

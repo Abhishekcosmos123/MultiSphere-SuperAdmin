@@ -3,7 +3,9 @@ export interface FetchModulesResponse {
     success: boolean;
     message: string;
     data: {
-      modules: string[];
+      allModules: string[];
+      currentModule: string;
+      content: string;
       useCoordinator: { [key: string]: boolean };
       useProducers: { [key: string]: boolean };
     };
@@ -21,6 +23,9 @@ export interface SuperAdminState {
     useCoordinator: { [key: string]: boolean };
     coordinator: Record<string, boolean>;
     useProducerr: { [key: string]: boolean };
+    contentUrl: string;
+    producers: Record<string, boolean>;
+    cloudinaryUrl: string;
   }
   
   export interface AdminProfilePayload {
@@ -88,10 +93,15 @@ export interface SuperAdminState {
     message: string;
     data: {
       updatedCoordinator: Record<string, boolean>;
+      updatedProducers: Record<string, boolean>;
+      current_module: string;
+      cloudinaryUrl: string;
     };
   }
 
   export type UpdateCoordinatorPayload = {
     coordinatorData: Record<string, boolean>;
     producerData: Record<string, boolean>;
+    currentModule: string;
+    jsonFile?: File;
   };

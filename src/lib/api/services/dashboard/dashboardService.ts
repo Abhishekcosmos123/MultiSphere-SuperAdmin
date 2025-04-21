@@ -18,7 +18,25 @@ export const dashboardService = {
     return apiClient.patch(`/super-admin/profile/${id}`, payload);
   },
 
-  async updateCoordinator(coordinatorData: Record<string, boolean>, producerData: Record<string, boolean>): Promise<UpdateCoordinatorResponse> {
-    return apiClient.patch(`/super-admin/update-role`, { use_coordinator: coordinatorData, use_producers: producerData});
+  async updateCoordinator(
+    coordinatorData: Record<string, boolean>,
+    producerData: Record<string, boolean>,
+    currentModule: string,
+    jsonFile?: File
+  ): Promise<UpdateCoordinatorResponse> {
+    const formData = new FormData();
+    formData.append('use_coordinator', JSON.stringify(coordinatorData));
+    formData.append('use_producers', JSON.stringify(producerData));
+    formData.append('current_module', currentModule);
+
+    if (jsonFile) {
+      formData.append('jsonFile', jsonFile, jsonFile.name);
+    }
+  
+    return apiClient.patch(`/super-admin/update-module`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
   }
 }; 
